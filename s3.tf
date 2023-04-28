@@ -36,3 +36,23 @@ resource "aws_iam_policy" "policys3" {
 }
 EOT
 }
+
+resource "aws_lambda_permission" "allow_bucket" {
+  statement_id  = "AllowExecutionFromS3Bucket"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.catalog-writer.arn
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.catalog_bucket.arn
+}
+
+resource "aws_s3_bucket_notification" "bucket_notification" {
+  bucket = aws_s3_bucket.catalog_bucket.id
+
+  lambda_function {
+    lambda_function_arn = aws_lambda_function.catalog-writer.arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_suffix       = ".png"
+  }
+
+  depends_on = [aws_lambda_permission.allow_bucket]
+}

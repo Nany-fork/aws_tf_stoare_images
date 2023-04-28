@@ -11,8 +11,34 @@ resource "aws_lambda_function" "catalog-writer" {
   runtime = "python3.9"
 }
 
+ data "aws_iam_policy_document" "inline_policy" {
+  statement {
+    actions = [
+      "dynamodb:DeleteItem",
+      "dynamodb:DescribeTable",
+      "dynamodb:GetItem",
+      "dynamodb:GetRecords",
+      "dynamodb:ListTables",
+      "dynamodb:PutItem",
+      "dynamodb:Query",
+      "dynamodb:Scan",
+      "dynamodb:UpdateItem",
+      "dynamodb:UpdateTable",
+    ]
+
+    resources = [aws_dynamodb_table.basic-dynamodb-table.arn]
+
+    effect = "Allow"
+  }
+}
+
 resource "aws_iam_role" "iam_for_lambda" {
   name = "lambda-role"
+
+  inline_policy {
+    name   = "policy-dynamodb-writer"
+    policy = data.aws_iam_policy_document.inline_policy.json
+  }
 
   assume_role_policy = <<EOF
 {
